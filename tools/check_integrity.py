@@ -30,10 +30,12 @@ def main() -> int:
         names = set(archive.namelist())
         required = [
             "Aifred.vst3/Contents/x86_64-win/Aifred.vst3",
-            "shared-dsp/README.md",
+            "shared-dsp/CMakeLists.txt",
             "AifredIntelligenceHost/AifredIntelligenceHost.exe",
             "AifredIntelligenceHost/AifredIntelligenceHost.runtimeconfig.json",
             "AifredIntelligenceHost/channel.json",
+            "model/Modelfile",
+            "Ollama/OllamaSetup.exe",
         ]
         normalized = {name.replace("\\", "/").replace("//", "/") for name in names}
         for item in required:

@@ -134,12 +134,19 @@ def verify(key,location='current'):
         checked_path(folder/data['engine'],folder)
         required=[data['plugin']+'/Contents/x86_64-win/Aifred.vst3',data['plugin']+'/Contents/Resources/moduleinfo.json']
         if data['schema']=='aifred.release.v2':
-            required += [data['sharedDsp']+'/README.md']
+            required += [data['sharedDsp']+'/CMakeLists.txt']
             required += [data['engine']+'/AifredIntelligenceHost'+suffix for suffix in ('.exe','.dll','.runtimeconfig.json')]
             required += [data['engine']+'/channel.json']
             if json.loads((folder/data['engine']/'channel.json').read_text(encoding='utf-8-sig')) != {'channel':info['runtimeChannel']}: raise ValueError('Host channel ownership mismatch')
         elif data['schema']!='aifred.release.v1': raise ValueError('Unknown artifact manifest schema')
-        if info['product']!='AIFRED 4': required += ['AIFRED-VST3-windows.zip','installer/AIFRED-VST3-Setup.exe','uninstaller/AIFRED-Uninstall.exe']
+        if info['product']!='AIFRED 4':
+            required += [
+                'AIFRED-VST3-windows.zip',
+                'installer/AIFRED-VST3-Setup.exe',
+                'uninstaller/AIFRED-Uninstall.exe',
+                'AIFRED-VST3-windows/model/Modelfile',
+                'AIFRED-VST3-windows/Ollama/OllamaSetup.exe',
+            ]
         for name in required:
             if name not in actual: raise ValueError(f'Required component missing: {name}')
         source=ROOT/'out'/key/'build'/info['platforms'][key]['plugin']/'Contents/x86_64-win/Aifred.vst3'

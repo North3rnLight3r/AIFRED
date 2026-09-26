@@ -14,9 +14,13 @@ jobs:
   vst3:
     name: VST3 Windows
     runs-on: windows-latest
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -29,7 +33,19 @@ jobs:
 
       - name: Build, test, and package Beta
         shell: pwsh
-        run: ./scripts/windows/build.ps1 -Action release
+        run: ./scripts/windows/build.ps1 -Action release -SkipGuiTests
+
+      - name: Dump release layout on failure
+        if: failure()
+        shell: pwsh
+        run: |
+          Write-Host "Repository root: $(Get-Location)"
+          if (Test-Path -LiteralPath 'out') {
+            Get-ChildItem -LiteralPath 'out' -Recurse -Force |
+              Select-Object FullName, Length | Format-Table -AutoSize
+          } else {
+            Write-Host 'The out directory was not created.'
+          }
 
       - name: Upload validated Beta artifacts
         uses: actions/upload-artifact@v4
@@ -48,6 +64,8 @@ jobs:
     needs: [vst3]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v4
         with:

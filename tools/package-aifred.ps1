@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string] $BuildRoot='out/windows-x64/build', [string] $OutputDir='out/windows-x64/stage', [ValidateSet('windows')] [string] $Platform='windows')
+param([string] $BuildRoot='out/windows-x64/build', [string] $OutputDir='out/windows-x64/stage', [ValidateSet('windows')] [string] $Platform='windows', [string] $OllamaInstallerPath)
 $ErrorActionPreference='Stop'
 $repoRoot=(Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $stage=Join-Path $repoRoot $OutputDir
@@ -9,16 +9,23 @@ if (Test-Path -LiteralPath $package) { throw 'Candidate must be prepared by the 
 $plugin=Join-Path $repoRoot "$BuildRoot/plugin-aifred/Aifred_artefacts/Release/VST3/Aifred.vst3"
 if (!(Test-Path -LiteralPath (Join-Path $plugin 'Contents/x86_64-win/Aifred.vst3'))) { throw 'Exact VST3 target missing.' }
 $sharedDsp=Join-Path $repoRoot 'shared-dsp'
-if (!(Test-Path -LiteralPath (Join-Path $sharedDsp 'README.md'))) { throw 'Shared DSP source missing.' }
+if (!(Test-Path -LiteralPath (Join-Path $sharedDsp 'CMakeLists.txt'))) { throw 'Shared DSP source missing.' }
+if ([string]::IsNullOrWhiteSpace($OllamaInstallerPath) -or !(Test-Path -LiteralPath $OllamaInstallerPath)) { throw 'Bundled Ollama installer missing.' }
 New-Item -ItemType Directory -Path $package | Out-Null
 Copy-Item -LiteralPath $plugin -Destination (Join-Path $package 'Aifred.vst3') -Recurse
 Copy-Item -LiteralPath $sharedDsp -Destination (Join-Path $package 'shared-dsp') -Recurse
 & dotnet publish (Join-Path $repoRoot 'tools/AifredIntelligenceHost/AifredIntelligenceHost.csproj') -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:IncludeNativeLibrariesForSelfExtract=true -o (Join-Path $package 'AifredIntelligenceHost')
 if ($LASTEXITCODE -ne 0) { throw 'Intelligence Host publish failed.' }
 '{"channel":"beta"}' | Set-Content -Encoding utf8 (Join-Path $package 'AifredIntelligenceHost/channel.json')
+$modelPackage = Join-Path $package 'model'
+New-Item -ItemType Directory -Force -Path $modelPackage | Out-Null
+Copy-Item -LiteralPath (Join-Path $repoRoot 'models/aifred/Modelfile') -Destination (Join-Path $modelPackage 'Modelfile')
+$ollamaPackage = Join-Path $package 'Ollama'
+New-Item -ItemType Directory -Force -Path $ollamaPackage | Out-Null
+Copy-Item -LiteralPath $OllamaInstallerPath -Destination (Join-Path $ollamaPackage 'OllamaSetup.exe')
 $configurationRoot = Join-Path $package 'Configuration'
 New-Item -ItemType Directory -Force -Path $configurationRoot | Out-Null
 Copy-Item -LiteralPath (Join-Path $repoRoot 'config/distribution/aifred-settings.example.json') -Destination (Join-Path $configurationRoot 'aifred-settings.example.json')
 Copy-Item -LiteralPath (Join-Path $repoRoot 'config/distribution/README.md') -Destination (Join-Path $configurationRoot 'README.md')
 Copy-Item -LiteralPath (Join-Path $repoRoot 'README.md') -Destination (Join-Path $package 'README.md')
-Compress-Archive -Path (Join-Path $package '*') -DestinationPath (Join-Path $stage 'AIFRED-VST3-windows.zip')
+Compress-Archive -Path (Join-Path $package '*') -DestinationPath (Join-Path $stage 'AIFRED-VST3-windows.zip') -Force

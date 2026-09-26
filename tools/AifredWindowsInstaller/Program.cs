@@ -52,9 +52,13 @@ sealed class InstallerForm : Form
             var plugin = Path.Combine(payload, "Aifred.vst3");
             var sharedDsp = Path.Combine(payload, "shared-dsp");
             var host = Path.Combine(payload, "AifredIntelligenceHost");
+            var modelFile = Path.Combine(payload, "model", "Modelfile");
+            var ollamaSetup = Path.Combine(payload, "Ollama", "OllamaSetup.exe");
             if (!File.Exists(Path.Combine(plugin, "Contents", "x86_64-win", "Aifred.vst3")) ||
-                !File.Exists(Path.Combine(sharedDsp, "README.md")) ||
-                !File.Exists(Path.Combine(host, "AifredIntelligenceHost.exe")))
+                !File.Exists(Path.Combine(sharedDsp, "CMakeLists.txt")) ||
+                !File.Exists(Path.Combine(host, "AifredIntelligenceHost.exe")) ||
+                !File.Exists(modelFile) ||
+                !File.Exists(ollamaSetup))
                 throw new IOException("The installer payload is incomplete.");
 
             InstallOwnership.StopHost();
@@ -63,8 +67,8 @@ sealed class InstallerForm : Form
             InstallOwnership.Install(host, InstallOwnership.HostParent, "IntelligenceHost");
 
             SetStatus("Setting up Ollama and the AIFRED model...");
-            var ollama = await EnsureOllamaAsync(scratch);
-            await EnsureModelAsync(ollama);
+            var ollama = await EnsureOllamaAsync(ollamaSetup);
+            await EnsureModelAsync(ollama, modelFile);
             InstallOwnership.Startup(true);
 
             SetStatus("Starting the Intelligence Host on port 8787...");
@@ -89,16 +93,12 @@ sealed class InstallerForm : Form
         }
     }
 
-    async Task<string> EnsureOllamaAsync(string scratch)
+    async Task<string> EnsureOllamaAsync(string bundledInstaller)
     {
         var ollama = FindOllama();
         if (ollama is null)
         {
-            var installer = Path.Combine(scratch, "OllamaSetup.exe");
-            using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-            var bytes = await client.GetByteArrayAsync("https://ollama.com/download/OllamaSetup.exe");
-            await File.WriteAllBytesAsync(installer, bytes);
-            using var setup = Process.Start(new ProcessStartInfo(installer) { UseShellExecute = true }) ?? throw new IOException("Could not start the Ollama installer.");
+            using var setup = Process.Start(new ProcessStartInfo(bundledInstaller) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(bundledInstaller)! }) ?? throw new IOException("Could not start the bundled Ollama installer.");
             await setup.WaitForExitAsync();
             if (setup.ExitCode != 0) throw new IOException($"Ollama setup exited with code {setup.ExitCode}.");
             for (var attempt = 0; attempt < 30 && ollama is null; attempt++)
@@ -130,15 +130,32 @@ sealed class InstallerForm : Form
         throw new IOException("Ollama did not become ready on port 11434.");
     }
 
-    async Task EnsureModelAsync(string ollama)
+    async Task EnsureModelAsync(string ollama, string modelFile)
     {
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
         var tags = await client.GetFromJsonAsync<JsonObject>(OllamaEndpoint + "/api/tags") ?? throw new IOException("Ollama returned no model list.");
         var installed = tags["models"]?.AsArray().Any(item => string.Equals(item?["name"]?.GetValue<string>(), Model, StringComparison.OrdinalIgnoreCase)) == true;
         if (installed) return;
-        using var pull = Process.Start(new ProcessStartInfo(ollama, $"pull {Model}") { UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden }) ?? throw new IOException("Could not start the Ollama model download.");
-        await pull.WaitForExitAsync();
-        if (pull.ExitCode != 0) throw new IOException("Ollama could not download aifred:latest. Check the network connection and run setup again.");
+        var exitCode = await RunOllamaAsync(ollama, "create", Model, "-f", modelFile);
+        if (exitCode != 0) throw new IOException("Ollama could not create aifred:latest from the bundled Modelfile. Check the network connection and run setup again.");
+    }
+
+    static async Task<int> RunOllamaAsync(string ollama, params string[] arguments)
+    {
+        var startInfo = new ProcessStartInfo(ollama)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        foreach (var argument in arguments) startInfo.ArgumentList.Add(argument);
+        using var process = Process.Start(startInfo) ?? throw new IOException("Could not start Ollama.");
+        _ = process.StandardOutput.ReadToEndAsync();
+        _ = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        return process.ExitCode;
     }
 
     async Task WaitForHostAsync()

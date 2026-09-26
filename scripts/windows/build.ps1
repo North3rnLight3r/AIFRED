@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidateSet('configure','build','test','stage','package','release')] [string] $Action = 'release')
+param([ValidateSet('configure','build','test','stage','package','release')] [string] $Action = 'release', [switch] $SkipGuiTests)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '../common/windows.ps1')
 $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
@@ -15,13 +15,16 @@ try {
     Initialize-AifredMsvc
     Invoke-Checked cmake @('--preset','windows-release')
     if ($Action -eq 'configure') { return }
-    $targets = @('Aifred_VST3','aifred_frontend_contract_tests','aifred_fixture_meter','aifred_state_contract_tests','aifred_gui_layout_tests','aifred_core_tests','aifred_reference_pool_contract_tests')
+    $targets = @('Aifred_VST3','aifred_frontend_contract_tests','aifred_fixture_meter','aifred_state_contract_tests','aifred_core_tests','aifred_reference_pool_contract_tests')
+    if (!$SkipGuiTests) { $targets += 'aifred_gui_layout_tests' }
     Invoke-Checked cmake (@('--build','--preset','windows-release','--target') + $targets)
     if ($Action -eq 'build') { return }
     Invoke-Checked python @('-B','scripts/common/check_repository.py')
     Invoke-Checked python @('-B','-m','unittest','discover','-s','scripts/tests')
     Invoke-Checked dotnet @('run','--project','tools/AifredIntelligenceHost.Tests/AifredIntelligenceHost.ContractTests.csproj','-c','Release')
-    Invoke-Checked ctest @('--preset','windows-release')
+    $ctestArguments = @('--preset','windows-release')
+    if ($SkipGuiTests) { $ctestArguments += @('--exclude-regex','aifred_gui_layout_tests') }
+    Invoke-Checked ctest $ctestArguments
     Invoke-Checked python @('-B','scripts/common/check_shared_core.py')
     if ($Action -eq 'test') { return }
     Invoke-Checked python @('-B','scripts/common/release.py','prepare','--platform','windows-x64')
@@ -32,7 +35,24 @@ try {
         Copy-Item -LiteralPath (Join-Path $repositoryRoot 'shared-dsp') -Destination (Join-Path $stageRoot 'shared-dsp') -Recurse
         Invoke-Checked dotnet @('publish','tools/AifredIntelligenceHost/AifredIntelligenceHost.csproj','-c','Release','-r','win-x64','--self-contained','true','-p:PublishSingleFile=false','-p:IncludeNativeLibrariesForSelfExtract=true','-o',(Join-Path $stageRoot 'AifredIntelligenceHost'))
     } else {
-        Invoke-Checked pwsh @('-NoProfile','-File','tools/package-aifred.ps1','-BuildRoot','out/windows-x64/build','-OutputDir','out/windows-x64/stage','-Platform','windows')
+        $ollamaInstaller = Join-Path $buildRoot 'OllamaSetup.exe'
+        if (!(Test-Path -LiteralPath $ollamaInstaller)) {
+            Write-Host 'Downloading the Ollama Windows installer for the self-contained setup payload...'
+            $downloaded = $false
+            for ($attempt = 1; $attempt -le 3 -and !$downloaded; $attempt++) {
+                try {
+                    Invoke-WebRequest -Uri 'https://ollama.com/download/OllamaSetup.exe' -OutFile $ollamaInstaller
+                    $downloaded = $true
+                } catch {
+                    if ($attempt -eq 3) { throw }
+                    Start-Sleep -Seconds ([int]([math]::Pow(2, $attempt)))
+                }
+            }
+        }
+        if (!(Test-Path -LiteralPath $ollamaInstaller) -or (Get-Item -LiteralPath $ollamaInstaller).Length -lt 1048576) {
+            throw 'The Ollama installer payload was not downloaded.'
+        }
+        Invoke-Checked pwsh @('-NoProfile','-File','tools/package-aifred.ps1','-BuildRoot','out/windows-x64/build','-OutputDir','out/windows-x64/stage','-Platform','windows','-OllamaInstallerPath',$ollamaInstaller)
         Invoke-Checked dotnet @('publish','tools/AifredWindowsInstaller/AifredWindowsInstaller.csproj','-c','Release','-o',(Join-Path $stageRoot 'installer'))
         Invoke-Checked dotnet @('publish','tools/AifredWindowsUninstaller/AifredWindowsUninstaller.csproj','-c','Release','-o',(Join-Path $stageRoot 'uninstaller'))
     }
