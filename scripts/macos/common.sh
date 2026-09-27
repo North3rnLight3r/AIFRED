@@ -81,6 +81,9 @@ remove_owned_tree() {
 stage_release() {
   [[ -d "$PLUGIN_BUILD" ]] || { echo "Built VST3 bundle is missing: $PLUGIN_BUILD" >&2; exit 1; }
   find "$PLUGIN_BUILD" \( -name '._*' -o -name '.DS_Store' \) -delete
+  # JUCE writes moduleinfo.json after its signing step; seal the final bundle.
+  codesign --force --sign - "$PLUGIN_BUILD"
+  codesign --verify --deep --strict "$PLUGIN_BUILD"
   mkdir -p "$STAGE_ROOT"
   cp -R "$PLUGIN_BUILD" "$STAGE_ROOT/Aifred.vst3"
   cp -R "$SOURCE_ROOT/shared-dsp" "$STAGE_ROOT/shared-dsp"

@@ -36,7 +36,7 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST
-swiftc -O -framework AppKit "$SCRIPT_DIR/Installer.swift" -o "$app/Contents/MacOS/Install AIFRED"
+swiftc -O -target arm64-apple-macos14.0 -framework AppKit "$SCRIPT_DIR/Installer.swift" -o "$app/Contents/MacOS/Install AIFRED"
 codesign --force --sign - "$app"
 codesign --verify --deep --strict "$app"
 cp "$ROOT/docs/MACOS_INSTALLATION.txt" "$image_root/READ ME.txt"

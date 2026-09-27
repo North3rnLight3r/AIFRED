@@ -25,6 +25,8 @@ install_tree() {
     exit 1
   fi
   rm -rf "$previous"
+  # The user approved this unsigned installer; clear quarantine only on its verified installed copies.
+  xattr -dr com.apple.quarantine "$target" 2>/dev/null || true
 }
 uid="$(id -u)"
 label=com.north3rnlight3r.aifred-intelligence-host
