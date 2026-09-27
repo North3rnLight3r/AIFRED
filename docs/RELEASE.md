@@ -4,8 +4,10 @@
 one clean checkout SHA, with full Git history and recursive submodules.
 It runs repository, Python, .NET and headless C++ contract tests, verifies the
 staged file inventory and hashes, and packages the frozen beta without changing
-plugin or backend source. The macOS job verifies the mounted DMG, installer
-signature, payload hashes, architectures and Ollama ZIP integrity.
+plugin or backend source. The macOS job verifies the mounted DMG, installer and plugin
+signatures, payload hashes, architectures and Ollama ZIP integrity. It also
+installs the payload, provisions the real model, checks host/chat readiness,
+reinstalls while retaining host settings, and verifies uninstall retention.
 
 After both jobs succeed on main, publication verifies that both manifests
 match the workflow SHA and that main still points to that SHA. It publishes

@@ -19,6 +19,9 @@ install_tree() {
   mkdir -p "$(dirname "$target")"
   ditto "$source" "$candidate"
   diff -qr "$source" "$candidate" >/dev/null
+  if [[ "$target" == "$data/IntelligenceHost" && -f "$target/settings.json" ]]; then
+    cp "$target/settings.json" "$candidate/settings.json"
+  fi
   [[ ! -e "$target" ]] || mv "$target" "$previous"
   if ! mv "$candidate" "$target"; then
     [[ ! -e "$previous" ]] || mv "$previous" "$target"
