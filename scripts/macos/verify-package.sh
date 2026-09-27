@@ -29,5 +29,5 @@ if [[ "${1:-}" == --install-smoke-test ]]; then
   bash "$data/Uninstall AIFRED.command"
   [[ ! -e "$HOME/Library/Audio/Plug-Ins/VST3/AIFRED Beta/Aifred.vst3" && ! -e "$data/IntelligenceHost/AifredIntelligenceHost" ]]
   [[ "$(cat "$data/IntelligenceHost/settings.json")" == "$settings" ]]
-  echo 'Installation, model provisioning, host readiness, settings retention, reinstall and uninstall passed.' 
+  echo 'Installation, model provisioning, host readiness, settings retention, reinstall and uninstall passed.'
 fi
