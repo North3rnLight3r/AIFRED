@@ -92,14 +92,13 @@ stage_release() {
     -o "$STAGE_ROOT/IntelligenceHost"
   printf '{"channel":"beta","commit":"%s"}\n' "$(cat "$OUT_ROOT/commit.txt")" > "$STAGE_ROOT/IntelligenceHost/channel.json"
   cp "$SOURCE_ROOT/config/distribution/aifred-settings.example.json" "$STAGE_ROOT/aifred-settings.example.json"
+  mkdir -p "$STAGE_ROOT/Ollama"
+  curl -fL --retry 3 https://ollama.com/download/Ollama-darwin.zip -o "$STAGE_ROOT/Ollama/Ollama-darwin.zip"
+  unzip -tq "$STAGE_ROOT/Ollama/Ollama-darwin.zip"
+  cp "$ROOT/scripts/macos/uninstall.command" "$STAGE_ROOT/uninstall.command"
   find "$STAGE_ROOT" \( -name '._*' -o -name '.DS_Store' \) -delete
 }
 
 package_release() {
-  local package_source="${1:-$STAGE_ROOT}"
-  [[ -d "$package_source" ]] || { echo "Package source is missing: $package_source" >&2; exit 1; }
-  mkdir -p "$PACKAGE_ROOT"
-  COPYFILE_DISABLE=1 tar -czf "$PACKAGE_ROOT/AIFRED-Beta-macos-arm64.tar.gz" -C "$package_source" .
-  cp "$OUT_ROOT/commit.txt" "$PACKAGE_ROOT/commit.txt"
-  echo "Created $PACKAGE_ROOT/AIFRED-Beta-macos-arm64.tar.gz"
+  "$ROOT/scripts/macos/package.sh" "${1:-$STAGE_ROOT}"
 }

@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/common.sh"
 
 action="${1:-release}"
+skip_gui="${2:-}"
+[[ -z "$skip_gui" || "$skip_gui" == --skip-gui-tests ]] || { echo "Unknown option: $skip_gui" >&2; exit 2; }
 case "$action" in
   configure|build|test|stage|package|release) ;;
   *) echo "Usage: $0 [configure|build|test|stage|package|release]" >&2; exit 2 ;;
@@ -17,21 +19,20 @@ prepare_origin_source
 cmake --preset macos-release
 [[ "$action" == configure ]] && exit 0
 
-cmake --build --preset macos-release --target \
-  Aifred_VST3 \
-  aifred_frontend_contract_tests \
-  aifred_fixture_meter \
-  aifred_state_contract_tests \
-  aifred_gui_layout_tests \
-  aifred_core_tests \
-  aifred_reference_pool_contract_tests
+targets=(Aifred_VST3 aifred_frontend_contract_tests aifred_fixture_meter aifred_state_contract_tests aifred_core_tests aifred_reference_pool_contract_tests)
+[[ "$skip_gui" == --skip-gui-tests ]] || targets+=(aifred_gui_layout_tests)
+cmake --build --preset macos-release --target "${targets[@]}"
 [[ "$action" == build ]] && exit 0
 
 python3 -B "$SOURCE_ROOT/scripts/common/check_repository.py"
 for script in "$SOURCE_ROOT"/scripts/macos/*.sh; do bash -n "$script"; done
 python3 -B -m unittest discover -s "$SOURCE_ROOT/scripts/tests"
 dotnet run --project "$SOURCE_ROOT/tools/AifredIntelligenceHost.Tests/AifredIntelligenceHost.ContractTests.csproj" -c Release
-ctest --preset macos-release
+if [[ "$skip_gui" == --skip-gui-tests ]]; then
+  ctest --preset macos-release --exclude-regex aifred_gui_layout_tests
+else
+  ctest --preset macos-release
+fi
 python3 -B "$SOURCE_ROOT/scripts/common/check_shared_core.py"
 [[ "$action" == test ]] && exit 0
 

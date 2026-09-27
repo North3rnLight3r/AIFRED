@@ -1,41 +1,48 @@
 # Release process
 
-## Source and workflow
+`.github/workflows/build.yml` builds Windows x64 and macOS Apple silicon from
+one clean checkout SHA, with full Git history and recursive submodules.
+It runs repository, Python, .NET and headless C++ contract tests, verifies the
+staged file inventory and hashes, and packages the frozen beta without changing
+plugin or backend source. The macOS job verifies the mounted DMG, installer
+signature, payload hashes, architectures and Ollama ZIP integrity.
 
-The supported Windows release workflow is `.github/workflows/build.yml`. It
-checks out full history and recursive submodules because release manifests use
-Git metadata. The workflow builds from the checked-out commit, runs the
-headless-safe test path, packages the beta, verifies its inventory and hashes,
-and uploads the three release artifacts.
+After both jobs succeed on main, publication verifies that both manifests
+match the workflow SHA and that main still points to that SHA. It publishes
+one latest release titled **AIFRED VST3 beta**, using the packaging tag
+`v0.3.6-beta-installers` and the unchanged product version 0.3.6.
+The tag points to the exact commit used for both platform builds.
+Only after the new assets are uploaded and checked does it delete superseded
+GitHub releases and all other remote tags, as required for this frozen beta.
+PR builds never publish. Workflow dispatch on main also builds and publishes.
 
-The workflow produces:
+Assets:
 
-- `AIFRED-VST3-windows.zip` — the complete extracted payload.
-- `AIFRED-VST3-Setup.exe` — the single-file Windows installer embedding that
-  payload.
-- `AIFRED-Uninstall.exe` — the beta uninstaller.
+- `AIFRED-VST3-Setup.exe`
+- `AIFRED-VST3-windows.zip`
+- `AIFRED-Uninstall.exe`
+- `AIFRED-VST3-macos-arm64.dmg`
 
-On a version tag, the release job publishes those artifacts to the matching
-GitHub release using `docs/RELEASE_NOTES.md`.
-
-## Local release validation
+Local validation:
 
 ```powershell
 ./scripts/windows/build.ps1 -Action release -SkipGuiTests
 ```
 
-The release script prepares an owned staging directory, writes `manifest.json`,
-checks every file hash, confirms the plugin matches the exact build target, and
-promotes the verified stage to `out/windows-x64/current`.
+```sh
+bash scripts/macos/build.sh release --skip-gui-tests
+bash scripts/macos/verify-package.sh
+```
 
-The beta package downloads the current Ollama Windows setup executable during
-packaging unless `out/windows-x64/build/OllamaSetup.exe` is already present.
-The final installer still creates the AIFRED model at install time because the
-base model weights are not stored in this repository.
+The macOS DMG includes a native AppKit installer and a complete compiled
+payload, including the self-contained .NET host and bundled Ollama runtime.
+Installation uses only macOS system tools, verifies hashes before copying,
+registers per-user LaunchAgents, creates the AIFRED model, and checks host/chat
+readiness. It retains user settings. Both platforms download their Ollama
+runtime during packaging; model weights download during installation if absent.
+Reference-pool data remains supplied by the frozen plugin's configured service.
 
-## Release limitations
-
-The manifest reports build and repository validation only. It does not certify
-DAW-specific loading, code signing, or every Windows host configuration.
-macOS remains signing-required and Linux remains unvalidated according to
-`scripts/release-layout.json`.
+The macOS beta is ad hoc signed and **not Developer ID signed or notarized**,
+per the approved unsigned beta distribution policy. See the installation guide
+for the macOS approval step. Intel Macs and Linux are not supported by this
+release. Build validation does not certify DAW-specific loading.

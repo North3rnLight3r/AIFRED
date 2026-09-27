@@ -1,0 +1,24 @@
+AIFRED VST3 beta — macOS Apple silicon
+
+1. Close your DAW. Open this disk image, then open Install AIFRED.app.
+2. This beta is unsigned (ad hoc signed for Apple silicon), not Apple notarized.
+   If macOS blocks the app, attempt to open it, then go to System Settings >
+   Privacy & Security > Open Anyway and approve the installer.
+3. Click Install. Keep the window open while the base model downloads.
+4. Once installation succeeds, rescan VST3 plugins in your DAW.
+
+Requires macOS 14 or later on Apple silicon, and internet for the initial
+model download. No compiler, Homebrew, Python or .NET SDK is required.
+The plugin, native Intelligence Host and Ollama runtime are already built.
+Ollama creates aifred:latest from the bundled AIFRED Modelfile.
+Reference-pool data is fetched by the frozen plugin from its configured
+online service; live reference data requires network access.
+
+Plugin: ~/Library/Audio/Plug-Ins/VST3/AIFRED Beta/Aifred.vst3
+Host and bundled runtime: ~/Library/Application Support/Aifred/beta
+The host and installer-owned Ollama service start at login. Existing settings
+are retained. A running Ollama service is reused.
+
+Installation log: ~/Library/Application Support/Aifred/beta/logs/install.log
+Uninstall: open ~/Library/Application Support/Aifred/beta/Uninstall AIFRED.command
+Settings, logs and downloaded Ollama model weights are retained.

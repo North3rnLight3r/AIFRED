@@ -115,7 +115,7 @@ def manifest(key):
     plugin='Aifred.vst3' if key=='macos-arm64' or is_official else 'AIFRED-VST3-windows/Aifred.vst3'
     shared_dsp='shared-dsp' if key=='macos-arm64' or is_official else 'AIFRED-VST3-windows/shared-dsp'
     engine='IntelligenceHost' if key=='macos-arm64' else ('AifredIntelligenceHost' if is_official else 'AIFRED-VST3-windows/AifredIntelligenceHost')
-    result={'schema':'aifred.release.v2','product':info['product'],'channel':info['channel'],'version':match.group(1),'gitSha':git('rev-parse','HEAD'),'workingTreeDirty':bool(git('status','--porcelain')),'sourceTreeSha256':source_tree_hash(),'platform':key,'architecture':info['platforms'][key]['architecture'],'toolchain':{'host':platform.platform(),'cmake':subprocess.check_output(['cmake','--version'],text=True).splitlines()[0],'dotnet':subprocess.check_output(['dotnet','--version'],text=True).strip()},'dspProfileSchemaVersion':info['dspProfileSchemaVersion'],'sharedCoreVersion':info['sharedCoreVersion'],'profiles':info['profiles'],'contextSchema':info['contextSchema'],'runtimeChannel':info['runtimeChannel'],'hostPort':info['hostPort'],'plugin':plugin,'sharedDsp':shared_dsp,'engine':engine,'installer':None if is_official else 'installer/AIFRED-VST3-Setup.exe','hashes':files,'validation':'build and repository tests; DAW/signing not certified'}
+    result={'schema':'aifred.release.v2','product':info['product'],'channel':info['channel'],'version':match.group(1),'gitSha':git('rev-parse','HEAD'),'workingTreeDirty':bool(git('status','--porcelain')),'sourceTreeSha256':source_tree_hash(),'platform':key,'architecture':info['platforms'][key]['architecture'],'toolchain':{'host':platform.platform(),'cmake':subprocess.check_output(['cmake','--version'],text=True).splitlines()[0],'dotnet':subprocess.check_output(['dotnet','--version'],text=True).strip()},'dspProfileSchemaVersion':info['dspProfileSchemaVersion'],'sharedCoreVersion':info['sharedCoreVersion'],'profiles':info['profiles'],'contextSchema':info['contextSchema'],'runtimeChannel':info['runtimeChannel'],'hostPort':info['hostPort'],'plugin':plugin,'sharedDsp':shared_dsp,'engine':engine,'installer':None if is_official or key=='macos-arm64' else 'installer/AIFRED-VST3-Setup.exe','hashes':files,'validation':'build and repository tests; DAW/signing not certified'}
     (stage/'manifest.json').write_text(json.dumps(result,indent=2)+'\n')
 
 def verify(key,location='current'):
@@ -158,7 +158,7 @@ def verify(key,location='current'):
         required=[data['plugin']+'/Contents/MacOS/Aifred',data['plugin']+'/Contents/Resources/moduleinfo.json']
         required += [data['sharedDsp']+'/CMakeLists.txt',data['sharedDsp']+'/include/aifred/Contracts.h']
         required += [data['engine']+'/AifredIntelligenceHost',data['engine']+'/channel.json']
-        required += ['model/Modelfile','intelligence/prompts/IntelligencePrompt.cs']
+        required += ['model/Modelfile','intelligence/prompts/IntelligencePrompt.cs','Ollama/Ollama-darwin.zip','uninstall.command']
         channel_metadata=json.loads((folder/data['engine']/'channel.json').read_text(encoding='utf-8'))
         if channel_metadata.get('channel') != info['runtimeChannel'] or not channel_metadata.get('commit'):
             raise ValueError('Host channel metadata is malformed')

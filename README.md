@@ -1,12 +1,12 @@
 # AIFRED Beta
 
-AIFRED is a Windows x64 VST3 plugin for real-time mix analysis, reference
+AIFRED is a Windows x64 and macOS Apple silicon VST3 plugin for real-time mix analysis, reference
 comparison, A/B measurement, and local or remote chat grounded in the current
 mix snapshot.
 
 The beta installer contains the VST3, shared DSP contract, self-contained
-Intelligence Host, Ollama Windows installer, and AIFRED Modelfile. It requires
-administrator approval. During setup, Ollama creates `aifred:latest` from the
+Intelligence Host, platform-specific Ollama runtime, and AIFRED Modelfile. The Windows installer requires
+administrator approval; the macOS installer installs for the current account. During setup, Ollama creates `aifred:latest` from the
 bundled Modelfile; Ollama may download the Modelfile's base model, so network
 access is required unless that model is already installed.
 
@@ -23,5 +23,6 @@ access is required unless that model is already installed.
 
 ## Repository scope
 
-The Windows beta workflow is the supported release path. macOS is locally
-scaffolded and requires signing; Linux is scaffolded but not validated.
+The beta workflow builds and publishes Windows and macOS installers from the
+same source commit. The macOS beta is unsigned and requires the documented
+macOS approval step. Linux is scaffolded but not validated.

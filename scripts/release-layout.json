@@ -12,7 +12,7 @@
       "preset": "macos-release",
       "architecture": "arm64",
       "plugin": "plugin-aifred/Aifred_artefacts/Release/VST3/Aifred.vst3",
-      "status": "LOCALLY VALIDATED / SIGNING REQUIRED"
+      "status": "CI VALIDATED / UNSIGNED BETA"
     },
     "linux-x64": {
       "preset": "linux-release",
