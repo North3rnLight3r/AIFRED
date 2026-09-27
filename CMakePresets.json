@@ -34,7 +34,8 @@
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/macos-arm64/install",
         "JUCE_BUILD_EXAMPLES": "OFF",
         "JUCE_BUILD_EXTRAS": "OFF",
-        "CMAKE_OSX_ARCHITECTURES": "arm64"
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "14.0"
       }
     },
     {

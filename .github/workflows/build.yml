@@ -82,6 +82,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Select C++20-capable Xcode
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
+          xcodebuild -version
       - name: Install build tools
         run: brew install ninja
       - name: Build, test, and package Beta

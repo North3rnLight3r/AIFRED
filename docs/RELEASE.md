@@ -23,7 +23,10 @@ Assets:
 - `AIFRED-Uninstall.exe`
 - `AIFRED-VST3-macos-arm64.dmg`
 
-Local validation:
+The macOS job selects Xcode 26.3 for the frozen source's C++20 `jthread` and
+`stop_token` support and sets the deployment target to macOS 14.
+
+Local validation (macOS requires Xcode 26.3 or a compatible newer toolchain):
 
 ```powershell
 ./scripts/windows/build.ps1 -Action release -SkipGuiTests
