@@ -21,8 +21,16 @@ access is required unless that model is already installed.
 - [Development](docs/DEVELOPMENT.md)
 - [Release process](docs/RELEASE.md)
 
-## Repository scope
+### Getting the most accurate mix analysis
 
-The beta workflow builds and publishes Windows and macOS installers from the
-same source commit. The macOS beta is unsigned and requires the documented
-macOS approval step. Linux is scaffolded but not validated.
+AIFRED analyzes a rolling history of recent DSP measurements rather than relying on a single instantaneous meter reading.
+
+When EQ, filters, dynamics, gain, stereo processing, or other effects are being actively adjusted, BufferHunter may capture multiple transitional mix states. Those observations can remain within the recent analysis window for a short period after the adjustment is complete.
+
+For best results, allow your project to play normally for **at least 30 seconds after making significant processing changes** before requesting a new analysis.
+
+This allows the observation window to represent the mix you actually settled on rather than the intermediate states produced while adjusting controls.
+
+**Recommended workflow:**
+
+Apply processing → finish the adjustment → play the mix for 30 seconds → request analysis.
