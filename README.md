@@ -1,5 +1,5 @@
 # AIFRED Beta
-
+<img src>="./Assets/aifred-mascot.jpg></img>
 AIFRED is a Windows x64 and macOS Apple silicon VST3 plugin for real-time mix analysis, reference
 comparison, A/B measurement, and local or remote chat grounded in the current
 mix snapshot.
