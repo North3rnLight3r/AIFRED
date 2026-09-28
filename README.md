@@ -1,5 +1,8 @@
 <Header>
-# AIFRED VST Beta <p class><img width="68" height="68" alt="aifred-mascot" src="https://github.com/user-attachments/assets/edb2e034-af9f-4774-a739-7e277d912539" </Header>
+   <p class><img width="168" height="168" alt="aifred-mascot" src="https://github.com/user-attachments/assets/edb2e034-af9f-4774-a739-7e277d912539" /p>
+</Header>
+
+# AIFRED VST - Beta
 
   
 AIFRED is a Windows x64 and macOS Apple silicon VST3 plugin for real-time mix analysis, reference
